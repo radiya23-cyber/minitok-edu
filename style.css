@@ -1,0 +1,50 @@
+body{
+  margin:0;
+  background:black;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+  }
+  
+  .tiktokFeed{
+  height:100vh;
+  width:100%;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  }
+  
+  .videoContainer{
+  height:100vh;
+  width:100%;
+  scroll-snap-align:start;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+  background:black;
+  }
+  
+  .videoContainer video{
+  height:100%;
+  width: 100%;
+  object-fit:cover;
+  }
+  
+  .videoActions{
+  position:absolute;
+  right:15px;
+  bottom:100px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  }
+  
+  .videoActions button{
+  font-size:18px;
+  padding:8px;
+  background:black;
+  color:white;
+  border:1px solid white;
+  border-radius:5px;
+  cursor:pointer;
+  }
