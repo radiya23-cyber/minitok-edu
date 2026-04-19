@@ -158,6 +158,22 @@ const firebaseConfig = {
   
   const container=document.createElement("div");
   container.className="videoContainer";
+
+
+  const watermark = document.createElement("div");
+  watermark.innerText = "MiniTok EDU";
+  watermark.style.position = "absolute";
+  watermark.style.bottom = "10px";
+  watermark.style.right = "10px";
+  watermark.style.color = "white";
+  watermark.style.fontSize = "14px";
+  watermark.style.opacity = "0.7";
+
+  container.style.position = "relative";
+  container.appendChild(video);
+  container.appendChild(watermark);
+
+  
   
   const video=document.createElement("video");
   
