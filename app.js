@@ -18,20 +18,17 @@ const logoutBtn = document.getElementById("logoutBtn");
 const userInfo = document.getElementById("userInfo");
 
 let currentUser = null;
-
 const admins = ["radiya23@gmail.com"];
 
 loginBtn.onclick = () => auth.signInWithPopup(provider);
 logoutBtn.onclick = () => auth.signOut();
 
-/* LOGIN STATE */
+/* LOGIN */
 
 auth.onAuthStateChanged(user => {
 
   if(user){
-
     currentUser = user;
-
     userInfo.innerText = "Conectado como: " + user.email;
     loginBtn.style.display="none";
     logoutBtn.style.display="inline-block";
@@ -42,12 +39,7 @@ auth.onAuthStateChanged(user => {
     }
 
   }else{
-
     currentUser=null;
-    userInfo.innerText="";
-    loginBtn.style.display="inline-block";
-    logoutBtn.style.display="none";
-
   }
 
 });
@@ -57,7 +49,7 @@ auth.onAuthStateChanged(user => {
 const cloudName="dt93bl9pl";
 const uploadPreset="ywynbnlx";
 
-/* SUBIR VIDEO */
+/* SUBIR VIDEO (NO TOCADO) */
 
 async function uploadVideo(file){
 
@@ -81,21 +73,15 @@ async function uploadVideo(file){
   const data=await response.json();
   const videoURL=data.secure_url || data.url;
 
-  if(!videoURL){
-    console.error("Cloudinary error",data);
-    return;
-  }
-
   await db.collection("videos").add({
     videoUrl:videoURL,
     userEmail:currentUser.email,
     userUID:currentUser.uid,
-    category:category,
-    description:description,
+    category,
+    description,
     status:"pendiente",
     likes:0,
     likedBy:[],
-    reported:false,
     views:0,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -103,38 +89,32 @@ async function uploadVideo(file){
   alert("Video enviado para aprobación.");
 }
 
-/* SUBIR DESDE ARCHIVO */
+/* ARCHIVO */
 
-document.getElementById("videoInput")?.addEventListener("change",e=>{
-
+document.getElementById("videoInput").addEventListener("change",e=>{
   const file=e.target.files[0];
 
   if(file){
-
     const videoTest=document.createElement("video");
     videoTest.preload="metadata";
 
     videoTest.onloadedmetadata=function(){
-
       if(videoTest.duration>10){
-        alert("El video no puede exceder 10 segundos.");
+        alert("Máx 10 segundos");
         return;
       }
-
       uploadVideo(file);
     };
 
     videoTest.src=URL.createObjectURL(file);
   }
-
 });
 
-/* FEED */
+/* FEED (ARREGLADO SIN ÍNDICE) */
 
 function loadVideos(){
 
   db.collection("videos")
-  .where("status","==","aprobado")
   .orderBy("createdAt","desc")
   .onSnapshot(snapshot=>{
 
@@ -145,35 +125,17 @@ function loadVideos(){
 
       const data=doc.data();
 
+      if(data.status !== "aprobado") return;
+
       const container=document.createElement("div");
       container.className="videoContainer";
-      container.style.position="relative";
 
-      /* VIDEO */
       const video=document.createElement("video");
       video.src=data.videoUrl;
-      video.autoplay=true;
       video.loop=true;
       video.muted=true;
       video.playsInline=true;
 
-      video.onplay=async()=>{
-        await db.collection("videos").doc(doc.id).update({
-          views:firebase.firestore.FieldValue.increment(1)
-        });
-      };
-
-      /* WATERMARK */
-      const watermark=document.createElement("div");
-      watermark.innerText="MiniTok EDU";
-      watermark.style.position="absolute";
-      watermark.style.bottom="10px";
-      watermark.style.right="10px";
-      watermark.style.color="white";
-      watermark.style.fontSize="14px";
-      watermark.style.opacity="0.7";
-
-      /* ACTIONS */
       const actions=document.createElement("div");
       actions.className="videoActions";
 
@@ -181,22 +143,10 @@ function loadVideos(){
       likeBtn.textContent="❤️ "+(data.likes || 0);
 
       likeBtn.onclick=async()=>{
-
         if(!currentUser) return;
-
-        const ref=db.collection("videos").doc(doc.id);
-        const snap=await ref.get();
-        const d=snap.data();
-
-        if(!(d.likedBy || []).includes(currentUser.uid)){
-
-          await ref.update({
-            likes:firebase.firestore.FieldValue.increment(1),
-            likedBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-          });
-
-        }
-
+        await db.collection("videos").doc(doc.id).update({
+          likes:firebase.firestore.FieldValue.increment(1)
+        });
       };
 
       const reportBtn=document.createElement("button");
@@ -209,31 +159,13 @@ function loadVideos(){
       actions.appendChild(likeBtn);
       actions.appendChild(reportBtn);
 
-      /* DELETE */
-      if(currentUser && (currentUser.uid===data.userUID || admins.includes(currentUser.email))){
-
-        const deleteBtn=document.createElement("button");
-        deleteBtn.textContent="🗑";
-
-        deleteBtn.onclick=async()=>{
-
-          if(confirm("¿Eliminar este video?")){
-            await db.collection("videos").doc(doc.id).delete();
-          }
-
-        };
-
-        actions.appendChild(deleteBtn);
-      }
-
       container.appendChild(video);
-      container.appendChild(watermark);
       container.appendChild(actions);
-
       feed.appendChild(container);
 
-      activateVideoObserver();
     });
+
+    activateObserver();
 
   });
 
@@ -241,13 +173,12 @@ function loadVideos(){
 
 loadVideos();
 
-/* ADMIN PANEL */
+/* ADMIN */
 
 function loadPendingVideos(){
 
   db.collection("videos")
   .where("status","==","pendiente")
-  .orderBy("createdAt","desc")
   .onSnapshot(snapshot=>{
 
     const panel=document.getElementById("adminPanel");
@@ -262,7 +193,7 @@ function loadPendingVideos(){
       const video=document.createElement("video");
       video.src=data.videoUrl;
       video.controls=true;
-      video.width=250;
+      video.width=200;
 
       const approve=document.createElement("button");
       approve.innerText="Aprobar";
@@ -273,27 +204,74 @@ function loadPendingVideos(){
       reject.onclick=()=>db.collection("videos").doc(doc.id).update({status:"rechazado"});
 
       container.appendChild(video);
-      container.appendChild(document.createElement("br"));
       container.appendChild(approve);
       container.appendChild(reject);
 
       panel.appendChild(container);
+
     });
 
   });
 
 }
 
-/* AUTOPLAY */
+/* OBSERVER */
 
-const observer=new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{
-    const video=entry.target;
-    if(entry.isIntersecting) video.play();
-    else video.pause();
-  });
-},{threshold:0.7});
+function activateObserver(){
 
-function activateVideoObserver(){
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.play();
+      }else{
+        entry.target.pause();
+      }
+    });
+  },{threshold:0.7});
+
   document.querySelectorAll(".videoContainer video").forEach(v=>observer.observe(v));
+}
+
+/*  GRABAR (NUEVO FUNCIONAL) */
+
+let mediaRecorder;
+let recordedChunks=[];
+let stream;
+
+async function startRecording(){
+
+  stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  const preview=document.getElementById("cameraPreview");
+  preview.srcObject=stream;
+
+  recordedChunks=[];
+
+  mediaRecorder=new MediaRecorder(stream);
+
+  mediaRecorder.ondataavailable=e=>{
+    if(e.data.size>0){
+      recordedChunks.push(e.data);
+    }
+  };
+
+  mediaRecorder.onstop=()=>{
+    const blob=new Blob(recordedChunks,{type:"video/webm"});
+    const file=new File([blob],"recording.webm");
+    uploadVideo(file);
+  };
+
+  mediaRecorder.start();
+
+  setTimeout(()=>{
+    if(mediaRecorder.state==="recording"){
+      mediaRecorder.stop();
+    }
+  },10000);
+
+}
+
+function stopRecording(){
+  if(mediaRecorder && mediaRecorder.state==="recording"){
+    mediaRecorder.stop();
+  }
 }

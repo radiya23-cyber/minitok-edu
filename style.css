@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: black;
   color: white;
   text-align: center;
 }
@@ -19,10 +19,8 @@ body {
   height: 100vh;
   width: 100%;
   scroll-snap-align: start;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
+  background: black;
 }
 
 .videoContainer video {
@@ -31,11 +29,11 @@ body {
   object-fit: cover;
 }
 
-/* BOTONES VIDEO */
+/* BOTONES */
 
 .videoActions {
   position: absolute;
-  right: 15px;
+  right: 10px;
   bottom: 100px;
   display: flex;
   flex-direction: column;
@@ -43,13 +41,21 @@ body {
 }
 
 .videoActions button {
-  font-size: 18px;
-  padding: 8px;
-  background: black;
-  color: white;
+  background: rgba(0,0,0,0.7);
   border: 1px solid white;
-  border-radius: 5px;
-  cursor: pointer;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 16px;
+  color: white;
+}
+
+/* CAMERA */
+
+#cameraPreview {
+  width: 90%;
+  max-width: 300px;
+  border-radius: 10px;
+  margin-top: 10px;
 }
 
 /* BOTONES GENERALES */
@@ -61,7 +67,6 @@ button {
   background: #ff4b5c;
   color: white;
   font-weight: bold;
-  cursor: pointer;
 }
 
 button:hover {
